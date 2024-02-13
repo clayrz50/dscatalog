@@ -10,31 +10,45 @@ import org.springframework.transaction.annotation.Transactional;
 import com.devsuperior.dscatalog.dto.CategoryDTO;
 import com.devsuperior.dscatalog.entities.Category;
 import com.devsuperior.dscatalog.repositories.CategoryRepository;
-import com.devsuperior.dscatalog.services.exceptions.EntityNotFoundException;
+import com.devsuperior.dscatalog.services.exceptions.ResourceNotFoundException;
 
-
+import jakarta.persistence.EntityNotFoundException;
 
 @Service
 public class CategoryService {
 	@Autowired
 	private CategoryRepository repository;
-	
+
 	@Transactional(readOnly = true)
-	public List<CategoryDTO> findAll(){
-		List<Category> list=repository.findAll();
-		return list.stream().map(x-> new CategoryDTO(x)).collect(Collectors.toList());
+	public List<CategoryDTO> findAll() {
+		List<Category> list = repository.findAll();
+		return list.stream().map(x -> new CategoryDTO(x)).collect(Collectors.toList());
 	}
-	
+
 	@Transactional(readOnly = true)
-	public CategoryDTO findById(Long id){
-		Category category=repository.findById(id).orElseThrow(()->new EntityNotFoundException("Entity not Found"));
+	public CategoryDTO findById(Long id) {
+		Category category = repository.findById(id)
+				.orElseThrow(() -> new ResourceNotFoundException("Entity not Found"));
 		return new CategoryDTO(category);
 	}
+
 	@Transactional
 	public CategoryDTO insert(CategoryDTO dto) {
-		Category category=new Category(dto.getId(),dto.getName());
-		category=repository.save(category);
+		Category category = new Category(dto.getId(), dto.getName());
+		category = repository.save(category);
 		return new CategoryDTO(category);
 	}
-	
+
+	@Transactional
+	public CategoryDTO update(Long id, CategoryDTO dto) {
+		try {
+			Category category = repository.getReferenceById(id);
+			category.setName(dto.getName());
+			category = repository.save(category);
+			return new CategoryDTO(category);
+		} catch (EntityNotFoundException e) {
+			throw new ResourceNotFoundException("Id not Found" + id);
+		}
+	}
+
 }
